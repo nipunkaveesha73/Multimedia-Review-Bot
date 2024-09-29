@@ -1,5 +1,3 @@
-Here’s the updated `README.md` file with the name changed to **Multimedia Review Bot**:
-
 ```markdown
 # Multimedia Review Bot
 
