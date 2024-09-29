@@ -41,5 +41,4 @@ This project is open-source and licensed under the [MIT License](LICENSE).
 ## Acknowledgements
 
 Special thanks to **API Machanla** for developing the bot for the **MONTISOORIYA💀❤️** group.
-```
 
