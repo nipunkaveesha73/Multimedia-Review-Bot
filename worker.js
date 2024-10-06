@@ -1,6 +1,7 @@
-const TOKEN = 'YOUR_BOT_TOKEN_HERE';  // Replace with your bot token
-const ADMIN_GROUP_ID = 'YOUR_ADMIN_GROUP_CHAT_ID';  // Replace with admin group chat ID
-const MAIN_GROUP_ID = 'YOUR_MAIN_GROUP_CHAT_ID';  // Replace with the main group chat ID
+// Use environment variables or placeholders for sensitive information
+const TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN';  // Replace with your bot token
+const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID || 'ADMIN_GROUP_ID';  // Replace with admin group chat ID
+const MAIN_GROUP_ID = process.env.MAIN_GROUP_ID || 'MAIN_GROUP_ID';  // Replace with the main group chat ID
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
 
 addEventListener('fetch', event => {
@@ -15,18 +16,24 @@ async function handleRequest(request) {
     const chatId = data.message.chat.id;
     const messageId = data.message.message_id;
     const username = data.message.from.username ? `@${data.message.from.username}` : data.message.from.first_name;
+    const text = data.message.text;
     console.log('Original message username:', username);
-    
+
     if (data.message.text && data.message.text.startsWith('/submitmedia')) {
       await handleSubmitMediaCommand(chatId);
-    } else if (data.message.photo || data.message.video || data.message.document) {
+    } else if (text && text.startsWith('/sendmsg') && chatId == ADMIN_GROUP_ID) {
+      await handleSendMsgCommand(text);
+    } else if ((data.message.photo || data.message.video || data.message.document) && chatId.toString() !== MAIN_GROUP_ID) {
       // User sends media
       const caption = data.message.caption || '';
       const media = data.message.photo || data.message.video || data.message.document;
       const fileId = Array.isArray(media) ? media[media.length - 1].file_id : media.file_id;
 
       await forwardToAdminGroup(chatId, messageId, fileId, caption, username);
-    }
+    } else if (text && chatId.toString() !== MAIN_GROUP_ID) {
+      // User sends a text message
+      await forwardTextToAdminGroup(username, chatId, text);
+    } 
   } else if (data.callback_query) {
     // Admin clicks inline button
     console.log('Callback query data:', JSON.stringify(data.callback_query));
@@ -37,7 +44,7 @@ async function handleRequest(request) {
     console.log('Original caption:', originalCaption);
     const originalUser = originalCaption.split("Posted by: ")[1];
     console.log('Extracted original user:', originalUser);
-    
+
     if (callbackData === 'good') {
       // Forward to main group
       await forwardToMainGroup(chatId, messageId, originalUser);
@@ -54,11 +61,58 @@ async function handleRequest(request) {
   return new Response('OK', { status: 200 });
 }
 
+async function forwardTextToAdminGroup(username, userId, text) {
+  const formattedMessage = `${username}(${userId}) - ${text}`;
+
+  const payload = {
+    chat_id: ADMIN_GROUP_ID,
+    text: formattedMessage
+  };
+
+  const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const responseData = await response.json();
+  console.log('Admin group text forward response:', JSON.stringify(responseData));
+}
+
+
+async function handleSendMsgCommand(text) {
+  const parts = text.split(' ');
+  if (parts.length < 3) {
+    console.log('Invalid /sendmsg command. Usage: /sendmsg userId message');
+    return;
+  }
+
+  const userId = parts[1];
+  const message = parts.slice(2).join(' ');
+
+  await sendMessageToUser(userId, message);
+}
+async function sendMessageToUser(userId, message) {
+  const payload = {
+    chat_id: userId,
+    text: message,
+    parse_mode: 'Markdown'
+  };
+
+  const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  const responseData = await response.json();
+  console.log('Message sent to user:', JSON.stringify(responseData));
+}
+
 async function handleSubmitMediaCommand(chatId) {
-  const message = "Want to post media in MONTISOORIYA💀❤️? Click the button below to send your media for admin review.";
+  const message = "Want to post media in the main group? Click the button below to send your media for admin review.";
   const inlineKeyboard = {
     inline_keyboard: [[
-      { text: "Send Media", url: `https://t.me/YOUR_BOT_USERNAME` }
+      { text: "Send Media", url: `https://t.me/media_review_bot` }
     ]]
   };
 
@@ -89,7 +143,7 @@ async function forwardToAdminGroup(chatId, messageId, fileId, caption, username)
     chat_id: ADMIN_GROUP_ID,
     from_chat_id: chatId,
     message_id: messageId,
-    caption: `${caption}\n\nPosted by: ${username}`,
+    caption: `ID: ${chatId}\ncaption: ${caption}\nPosted by: ${username}`,
     reply_markup: JSON.stringify(buttons)
   };
 
