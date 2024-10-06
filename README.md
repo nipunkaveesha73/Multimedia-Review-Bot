@@ -1,44 +1,55 @@
 ```markdown
-# Multimedia Review Bot
+# Media Review Telegram Bot
 
-**Multimedia Review Bot** is a Telegram bot created for the group **MONTISOORIYA💀❤️** by **API Machanla**. The bot helps users submit media files for admin approval before they are posted in the main group.
+This is a Telegram bot that facilitates media submission and review by admins before posting to the main group. Users can submit media, which is forwarded to the admin group for approval. Admins can choose to accept or reject the media using inline buttons. If approved, the media is forwarded to the main group along with a mention of the original submitter.
 
 ## Features
 
-- **User Media Submission**: Users can send media files to the bot for review.
-- **Admin Review**: The bot forwards media to an admin-only group with two inline buttons: "Good" and "Not Good."
-- **Approval Process**:
-  - If an admin clicks "Good," the bot forwards the media to the main group and tags the user who submitted it.
-  - If an admin clicks "Not Good," the media is deleted from the admin group without forwarding.
+- **Submit Media**: Users can submit media for admin review by typing `/submitmedia`. The bot responds with a button to direct the user to the media review bot.
+- **Admin Approval**: Media is forwarded to a private admin group with two inline buttons:
+  - `Good`: Forwards the media to the main group and deletes it from the admin group.
+  - `Not Good`: Deletes the media from the admin group without forwarding.
+- **Custom Messaging**: Admins can use the `/sendmsg` command to send a custom message to any user.
 
-## Bot Commands
+## Setup
 
-- `/submitmedia`: Sends a message prompting the user to submit media for admin review.
+1. **Clone the repository**:
 
-## Installation
-
-1. Clone this repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/multimedia-review-bot.git
+   git clone https://github.com/your-username/telegram-media-review-bot.git
+   cd telegram-media-review-bot
    ```
 
-2. Set up your Cloudflare Workers environment and configure the following bot variables in the code:
-   - **TOKEN**: Your Telegram bot token
-   - **ADMIN_GROUP_ID**: The chat ID of the admin-only group
-   - **MAIN_GROUP_ID**: The chat ID of the main group
+2. **Bot Token**: Replace the `TOKEN` in the code with your actual bot token. You can obtain it from [BotFather](https://t.me/botfather) on Telegram.
 
-3. Deploy the bot to Cloudflare Workers.
+3. **Group IDs**: 
+   - Replace `ADMIN_GROUP_ID` with the ID of the group where admins will review the media.
+   - Replace `MAIN_GROUP_ID` with the ID of the main group where approved media will be posted.
 
-## Usage
+4. **Deploy**:
+   - The bot is designed to run on Cloudflare Workers or any environment that supports webhooks and HTTP fetch requests. Make sure to configure the bot's webhook accordingly:
+   
+     ```bash
+     curl -F "url=https://your-worker-url" https://api.telegram.org/bot<YOUR_TOKEN>/setWebhook
+     ```
 
-1. In the main group, users can submit media to the bot by typing `/submitmedia`. The bot will respond with a message and a button to upload their media.
-2. Admins review the media in the admin group and decide whether to approve or reject it using the inline buttons.
+## Commands
+
+- **/submitmedia**: Sends a button to the user with a link to submit their media for review.
+- **/sendmsg <userId> <message>**: Sends a custom message to the user with the specified `userId`. This command is only executable by admins within the admin group.
+
+## Inline Buttons
+
+- **Good**: Forwards the media to the main group with a mention of the original poster and deletes the message from the admin group.
+- **Not Good**: Deletes the media from the admin group without forwarding.
+
+## Usage Example
+
+1. A user sends media or text to the bot.
+2. The bot forwards the media/text to the admin group for review.
+3. Admins can choose to either approve or reject the media using the inline buttons.
+4. Approved media is sent to the main group with a mention of the user who posted it.
 
 ## License
 
-This project is open-source and licensed under the [MIT License](LICENSE).
-
-## Acknowledgements
-
-Special thanks to **API Machanla** for developing the bot for the **MONTISOORIYA💀❤️** group.
-
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
